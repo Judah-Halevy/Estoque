@@ -3,37 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Controle de Estoque · Painel Empresarial</title>
+<title>Estoque de TI · Painel de Inventário</title>
 <style>
   :root {
-    --navy: #0f172a;
-    --navy-2: #1e293b;
-    --ink: #0f172a;
-    --slate: #475569;
-    --slate-2: #64748b;
-    --slate-3: #94a3b8;
-    --line: #e2e8f0;
-    --line-2: #f1f5f9;
-    --bg: #f8fafc;
-    --card: #ffffff;
-    --accent: #2563eb;
-    --accent-dark: #1d4ed8;
-    --accent-light: #eff6ff;
-    --success: #16a34a;
-    --success-light: #dcfce7;
-    --warn: #d97706;
-    --warn-light: #fef3c7;
-    --danger: #dc2626;
-    --danger-light: #fee2e2;
-    --shadow: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.05);
-    --shadow-lg: 0 10px 30px rgba(15,23,42,.10);
+    color-scheme: dark;
+    --navy: #0d1424;
+    --navy-2: #111a2e;
+    --ink: #e8edf6;
+    --slate: #9aa6bd;
+    --slate-2: #7c89a0;
+    --slate-3: #56607a;
+    --line: #232d42;
+    --line-2: #171f30;
+    --bg: #0a0f1c;
+    --card: #121a2b;
+    --card-2: #192238;
+    --accent: #3b82f6;
+    --accent-dark: #2563eb;
+    --accent-light: rgba(59,130,246,.16);
+    --success: #22c55e;
+    --success-light: rgba(34,197,94,.15);
+    --warn: #f59e0b;
+    --warn-light: rgba(245,158,11,.15);
+    --danger: #ef4444;
+    --danger-light: rgba(239,68,68,.15);
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 1px 3px rgba(0,0,0,.25);
+    --shadow-lg: 0 12px 34px rgba(0,0,0,.55);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg); color: var(--ink); line-height: 1.5; min-height: 100vh;
+    background: radial-gradient(1200px 560px at 50% -260px, rgba(59,130,246,.10), transparent 60%), var(--bg);
+    color: var(--ink); line-height: 1.5; min-height: 100vh;
     -webkit-font-smoothing: antialiased;
   }
+  ::placeholder { color: var(--slate-3); opacity: 1; }
+  select option { background: var(--card); color: var(--ink); }
+  ::selection { background: var(--accent-light); }
 
   /* ===== Top bar (branding) ===== */
   .topbar {
@@ -43,7 +49,7 @@
   }
   .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .monogram {
-    width: 40px; height: 40px; border-radius: 9px; background: var(--navy); color: #fff;
+    width: 40px; height: 40px; border-radius: 9px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff;
     font-weight: 700; font-size: 15px; letter-spacing: .3px;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
   }
@@ -58,10 +64,10 @@
     padding: 6px 12px; border-radius: 30px; font-size: 12px; font-weight: 600; color: var(--slate);
   }
   .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--slate-3); }
-  .conn-badge.on { background: var(--success-light); color: #15803d; }
+  .conn-badge.on { background: var(--success-light); color: #4ade80; }
   .conn-badge.on .conn-dot { background: var(--success); }
   .conn-badge.off { background: var(--line-2); color: var(--slate); }
-  .conn-badge.err { background: var(--danger-light); color: #991b1b; }
+  .conn-badge.err { background: var(--danger-light); color: #fca5a5; }
   .conn-badge.err .conn-dot { background: var(--danger); }
   .btn-ghost {
     background: var(--card); color: var(--slate); border: 1px solid var(--line);
@@ -101,7 +107,7 @@
   .fin-item .label { font-size: 11px; color: var(--slate-2); text-transform: uppercase; letter-spacing: .4px; font-weight: 600; }
   .fin-item .value { font-size: 22px; font-weight: 700; margin-top: 4px; letter-spacing: -.3px; }
   .fin-item .value.custo { color: var(--slate); }
-  .fin-item .value.venda { color: var(--accent-dark); }
+  .fin-item .value.venda { color: #60a5fa; }
   .fin-item .value.margem { color: var(--success); }
   .fin-item .sub { font-size: 11px; color: var(--slate-3); margin-top: 2px; }
 
@@ -150,11 +156,11 @@
   thead th.right { text-align: right; }
   tbody td { padding: 12px 14px; border-bottom: 1px solid var(--line-2); font-size: 13px; vertical-align: middle; }
   tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover { background: #fafbfc; }
+  tbody tr:hover { background: rgba(255,255,255,.025); }
   .product-name { font-weight: 600; color: var(--ink); }
   .sku { font-size: 11px; color: var(--slate-3); font-family: 'SF Mono', Consolas, monospace; margin-top: 1px; }
   .tag {
-    display: inline-block; background: var(--accent-light); color: var(--accent-dark);
+    display: inline-block; background: var(--accent-light); color: #93c5fd;
     font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px;
   }
   .muted-cell { color: var(--slate-3); }
@@ -208,7 +214,7 @@
 
   /* ===== Modal ===== */
   .modal-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 60;
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 60;
     align-items: center; justify-content: center; padding: 20px;
   }
   .modal-overlay.active { display: flex; }
@@ -236,7 +242,7 @@
 
   /* ===== Toast ===== */
   .toast {
-    position: fixed; bottom: 22px; right: 22px; background: var(--navy); color: #fff;
+    position: fixed; bottom: 22px; right: 22px; background: var(--card-2); color: var(--ink); border: 1px solid var(--line);
     padding: 11px 18px; border-radius: 9px; font-size: 13px; box-shadow: var(--shadow-lg);
     opacity: 0; transform: translateY(10px); transition: opacity .2s, transform .2s; z-index: 100; pointer-events: none; max-width: 320px;
   }
@@ -249,7 +255,7 @@
   .setup-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 200; overflow: auto; }
   .setup-wrap { max-width: 740px; margin: 0 auto; padding: 40px 24px 80px; }
   .setup-head { text-align: center; margin-bottom: 26px; }
-  .setup-head .logo { width: 52px; height: 52px; border-radius: 12px; background: var(--navy); color: #fff; font-size: 24px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .setup-head .logo { width: 52px; height: 52px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; font-size: 24px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; }
   .setup-head h1 { font-size: 24px; font-weight: 700; letter-spacing: -.2px; }
   .setup-head p { color: var(--slate-2); margin-top: 5px; font-size: 14px; }
   .setup-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow); }
@@ -260,9 +266,9 @@
   .setup-card li { margin-bottom: 4px; }
   .setup-card a { color: var(--accent); font-weight: 600; }
   .setup-card code { background: var(--line-2); padding: 1px 6px; border-radius: 4px; font-size: 12px; font-family: 'SF Mono', Consolas, monospace; }
-  .setup-card .note { background: var(--warn-light); color: #92400e; border-radius: 8px; padding: 11px 13px; font-size: 12px; margin-top: 12px; border-left: 3px solid var(--warn); }
-  .setup-card .note strong { color: #78350f; }
-  .code-block { position: relative; background: var(--navy); color: #e2e8f0; border-radius: 9px; padding: 14px; margin: 10px 0; font-family: 'SF Mono', Consolas, Monaco, monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; }
+  .setup-card .note { background: var(--warn-light); color: #fbbf24; border-radius: 8px; padding: 11px 13px; font-size: 12px; margin-top: 12px; border-left: 3px solid var(--warn); }
+  .setup-card .note strong { color: #fcd34d; }
+  .code-block { position: relative; background: #060a14; color: #e2e8f0; border: 1px solid var(--line); border-radius: 9px; padding: 14px; margin: 10px 0; font-family: 'SF Mono', Consolas, Monaco, monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; }
   .code-block pre { margin: 0; white-space: pre; }
   .copy-btn { position: absolute; top: 7px; right: 7px; background: rgba(255,255,255,.12); color: #fff; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
   .copy-btn:hover { background: rgba(255,255,255,.22); }
@@ -271,7 +277,7 @@
   .field-row label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: var(--slate); }
   .field-row input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; font-family: 'SF Mono', Consolas, monospace; }
   .field-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
-  .setup-error { display: none; background: var(--danger-light); color: #991b1b; border-radius: 8px; padding: 11px 13px; font-size: 12px; margin-top: 10px; border-left: 3px solid var(--danger); }
+  .setup-error { display: none; background: var(--danger-light); color: #fca5a5; border-radius: 8px; padding: 11px 13px; font-size: 12px; margin-top: 10px; border-left: 3px solid var(--danger); }
   .setup-error.show { display: block; }
   .setup-status { text-align: center; color: var(--slate-2); font-size: 12px; margin-top: 14px; }
   .setup-status a { color: var(--accent); font-weight: 600; cursor: pointer; }
@@ -361,7 +367,7 @@ do $$ begin alter publication supabase_realtime add table produtos; exception wh
 do $$ begin alter publication supabase_realtime add table empresa; exception when others then null; end $$;</pre>
       </div>
       <div class="note">
-        <strong>Segurança:</strong> com esta configuração, quem tiver a URL e a chave (ou o link de acesso) consegue ler e editar seus produtos. Para uso empresarial interno, basta <strong>não compartilhar o link publicamente</strong>. Se quiser login por senha depois, é só pedir.
+        <strong>Segurança:</strong> com esta configuração, quem tiver a URL e a chave (ou o link de acesso) consegue ler e editar seus itens de TI. Para uso interno, basta <strong>não compartilhar o link publicamente</strong>. Se quiser login por senha depois, é só pedir.
       </div>
     </div>
 
@@ -389,7 +395,7 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
 <div id="appContainer" style="display:none;">
   <div class="topbar">
     <div class="brand">
-      <div class="monogram" id="brandMonogram">EM</div>
+      <div class="monogram" id="brandMonogram">TI</div>
       <div class="brand-text">
         <div class="name placeholder" id="brandName">Nome da Empresa</div>
         <div class="sector" id="brandSector">Defina o perfil em 🏢 Perfil</div>
@@ -405,23 +411,23 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
 
   <div class="container">
     <div class="page-head">
-      <h1>Gestão de Estoque</h1>
-      <p>Controle de produtos, inventário e valorização do estoque</p>
+      <h1>Inventário de TI</h1>
+      <p>Controle de equipamentos, periféricos, licenças e insumos de tecnologia</p>
     </div>
 
     <div class="stats-grid">
-      <div class="stat blue"><div class="label">Total de Produtos</div><div class="value" id="statTotal">0</div></div>
+      <div class="stat blue"><div class="label">Total de Itens</div><div class="value" id="statTotal">0</div></div>
       <div class="stat green"><div class="label">Itens em Estoque</div><div class="value" id="statItems">0</div></div>
       <div class="stat orange"><div class="label">Estoque Baixo</div><div class="value" id="statLow">0</div></div>
       <div class="stat red"><div class="label">Sem Estoque</div><div class="value" id="statZero">0</div></div>
     </div>
 
     <div class="financeiro">
-      <div class="financeiro-head"><h2>Resumo Financeiro</h2></div>
+      <div class="financeiro-head"><h2>Valorização do Inventário</h2></div>
       <div class="financeiro-grid">
         <div class="fin-item"><div class="label">Custo Total</div><div class="value custo" id="finCusto">R$ 0,00</div><div class="sub" id="finCustoSub">custo de aquisição</div></div>
-        <div class="fin-item"><div class="label">Valor de Venda</div><div class="value venda" id="finVenda">R$ 0,00</div><div class="sub" id="finVendaSub">potencial de venda</div></div>
-        <div class="fin-item"><div class="label">Margem Potencial</div><div class="value margem" id="finMargem">R$ 0,00</div><div class="sub" id="finMargemSub">0% de margem</div></div>
+        <div class="fin-item"><div class="label">Valor de Reposição</div><div class="value venda" id="finVenda">R$ 0,00</div><div class="sub" id="finVendaSub">valor atual do acervo</div></div>
+        <div class="fin-item"><div class="label">Variação</div><div class="value margem" id="finMargem">R$ 0,00</div><div class="sub" id="finMargemSub">0% de variação</div></div>
       </div>
     </div>
 
@@ -435,7 +441,7 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
         <option value="low">Estoque baixo</option>
         <option value="zero">Sem estoque</option>
       </select>
-      <button class="btn btn-primary" onclick="openModal()">＋ Novo Produto</button>
+      <button class="btn btn-primary" onclick="openModal()">＋ Novo Item</button>
     </div>
 
     <div class="card-panel">
@@ -443,54 +449,54 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
         <table>
           <thead>
             <tr>
-              <th>Produto</th><th>Categoria</th><th>Fornecedor</th>
+              <th>Item</th><th>Categoria</th><th>Fornecedor</th>
               <th class="center">Qtd</th><th class="center">Status</th>
               <th class="right">Preço (custo / venda)</th><th class="right">Valor</th><th class="center">Ações</th>
             </tr>
           </thead>
-          <tbody id="productTableBody"><tr class="loading-row"><td colspan="8"><span class="spinner"></span> Carregando produtos…</td></tr></tbody>
+          <tbody id="productTableBody"><tr class="loading-row"><td colspan="8"><span class="spinner"></span> Carregando inventário…</td></tr></tbody>
         </table>
       </div>
       <div class="empty" id="emptyState" style="display:none;">
-        <div class="big-icon">📦</div>
-        <h3>Nenhum produto cadastrado</h3>
-        <p>Cadastre o primeiro item do seu estoque. Ele ficará disponível em todos os aparelhos.</p>
-        <button class="btn btn-primary" onclick="openModal()">＋ Cadastrar Produto</button>
+        <div class="big-icon">🖥️</div>
+        <h3>Nenhum item cadastrado</h3>
+        <p>Cadastre o primeiro item de TI do seu inventário. Ele ficará disponível em todos os aparelhos.</p>
+        <button class="btn btn-primary" onclick="openModal()">＋ Cadastrar Item</button>
       </div>
     </div>
 
     <div class="footer">
-      <span class="co" id="footerCompany">Painel de Estoque</span><span class="sep">·</span>Sistema de Controle de Inventário<span class="sep">·</span>© <span id="footerYear">2026</span>
+      <span class="co" id="footerCompany">Estoque de TI</span><span class="sep">·</span>Painel de Inventário de Tecnologia<span class="sep">·</span>© <span id="footerYear">2026</span>
     </div>
   </div>
 </div>
 
-<!-- Modal Produto -->
+<!-- Modal Item -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
-    <div class="modal-header"><h2 id="modalTitle">Cadastrar Produto</h2><button class="close" onclick="closeModal()">×</button></div>
+    <div class="modal-header"><h2 id="modalTitle">Cadastrar Item</h2><button class="close" onclick="closeModal()">×</button></div>
     <div class="modal-body">
       <input type="hidden" id="editId">
       <div class="field" id="field-name">
-        <label>Nome do Produto <span class="req">*</span></label>
-        <input type="text" id="inpName" placeholder="Ex: Café Pilão 500g" autocomplete="off">
-        <div class="err-msg">Informe o nome do produto.</div>
+        <label>Nome do Item <span class="req">*</span></label>
+        <input type="text" id="inpName" placeholder="Ex: Notebook Dell Latitude 5440" autocomplete="off">
+        <div class="err-msg">Informe o nome do item.</div>
       </div>
       <div class="form-section-title">Identificação</div>
       <div class="row-2">
-        <div class="field"><label>SKU / Código</label><input type="text" id="inpSku" placeholder="Ex: CAF-500-001" autocomplete="off"><div class="hint">Código interno do produto.</div></div>
-        <div class="field"><label>Categoria</label><input type="text" id="inpCategory" placeholder="Ex: Bebidas" list="catList" autocomplete="off"></div>
+        <div class="field"><label>SKU / Código</label><input type="text" id="inpSku" placeholder="Ex: NB-DEL-5440" autocomplete="off"><div class="hint">Código interno / patrimonial do item.</div></div>
+        <div class="field"><label>Categoria</label><input type="text" id="inpCategory" placeholder="Ex: Periféricos" list="catList" autocomplete="off"></div>
       </div>
-      <div class="field"><label>Fornecedor</label><input type="text" id="inpSupplier" placeholder="Ex: Distribuidora XYZ" list="supList" autocomplete="off"></div>
+      <div class="field"><label>Fornecedor</label><input type="text" id="inpSupplier" placeholder="Ex: Compufour" list="supList" autocomplete="off"></div>
       <div class="form-section-title">Estoque</div>
       <div class="row-2">
         <div class="field" id="field-qty"><label>Quantidade <span class="req">*</span></label><input type="number" id="inpQty" placeholder="0" min="0" step="1"><div class="err-msg">Quantidade inválida.</div></div>
         <div class="field"><label>Estoque Mínimo</label><input type="number" id="inpMin" placeholder="5" min="0" step="1"><div class="hint">Alerta quando baixar.</div></div>
       </div>
-      <div class="form-section-title">Preços (R$)</div>
+      <div class="form-section-title">Valores (R$)</div>
       <div class="row-2">
-        <div class="field"><label>Preço de Custo</label><input type="number" id="inpCost" placeholder="0,00" min="0" step="0.01"></div>
-        <div class="field"><label>Preço de Venda</label><input type="number" id="inpPrice" placeholder="0,00" min="0" step="0.01"></div>
+        <div class="field"><label>Custo Unitário</label><input type="number" id="inpCost" placeholder="0,00" min="0" step="0.01"></div>
+        <div class="field"><label>Valor de Reposição</label><input type="number" id="inpPrice" placeholder="0,00" min="0" step="0.01"></div>
       </div>
       <datalist id="catList"></datalist><datalist id="supList"></datalist>
     </div>
@@ -506,8 +512,8 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
   <div class="modal">
     <div class="modal-header"><h2>Perfil da Empresa</h2><button class="close" onclick="closeCompanyModal()">×</button></div>
     <div class="modal-body">
-      <div class="field"><label>Nome da Empresa</label><input type="text" id="inpCoName" placeholder="Ex: Mercearia Silva Ltda" autocomplete="off"></div>
-      <div class="field"><label>Setor / Ramo</label><input type="text" id="inpCoSector" placeholder="Ex: Varejo de Alimentos" autocomplete="off"></div>
+      <div class="field"><label>Nome da Empresa</label><input type="text" id="inpCoName" placeholder="Ex: TechCorp Soluções" autocomplete="off"></div>
+      <div class="field"><label>Setor / Área de TI</label><input type="text" id="inpCoSector" placeholder="Ex: Infraestrutura & Redes" autocomplete="off"></div>
       <div class="field"><label>URL do Logotipo (opcional)</label><input type="text" id="inpCoLogo" placeholder="https://...logo.png" autocomplete="off" spellcheck="false"><div class="hint">Cole o link de uma imagem. Se vazio, usamos as iniciais do nome como logotipo.</div></div>
     </div>
     <div class="modal-footer">
@@ -588,9 +594,9 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
     };
   }
   function monogram(name) {
-    if (!name) return 'EM';
+    if (!name) return 'TI';
     var parts = name.trim().split(/\s+/).filter(function (w) { return w.length > 0; });
-    if (parts.length === 0) return 'EM';
+    if (parts.length === 0) return 'TI';
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
@@ -776,13 +782,15 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
 
   /* ---------- Render ---------- */
   function uniq(field) { var s = {}; products.forEach(function (p) { if (p[field]) s[p[field]] = true; }); return Object.keys(s).sort(); }
+  var DEFAULT_CATEGORIES = ['Notebooks', 'Desktops', 'Servidores', 'Periféricos', 'Monitores', 'Networking', 'Cabos', 'Armazenamento', 'Memórias', 'Licenças', 'Segurança', 'Acessórios', 'Mobilidade', 'Energia'];
   function renderFilters() {
     var cats = uniq('category'); var sups = uniq('supplier');
     var cs = document.getElementById('categoryFilter'); var cur1 = cs.value;
     cs.innerHTML = '<option value="">Categorias</option>' + cats.map(function (c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join(''); cs.value = cur1;
     var ss = document.getElementById('supplierFilter'); var cur2 = ss.value;
     ss.innerHTML = '<option value="">Fornecedores</option>' + sups.map(function (s) { return '<option value="' + escapeHtml(s) + '">' + escapeHtml(s) + '</option>'; }).join(''); ss.value = cur2;
-    document.getElementById('catList').innerHTML = cats.map(function (c) { return '<option value="' + escapeHtml(c) + '">'; }).join('');
+    var merged = cats.concat(DEFAULT_CATEGORIES.filter(function (c) { return cats.indexOf(c) === -1; }));
+    document.getElementById('catList').innerHTML = merged.map(function (c) { return '<option value="' + escapeHtml(c) + '">'; }).join('');
     document.getElementById('supList').innerHTML = sups.map(function (s) { return '<option value="' + escapeHtml(s) + '">'; }).join('');
   }
   function renderStats() {
@@ -802,8 +810,8 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
     var margem = venda - custo;
     document.getElementById('finMargem').textContent = fmtBRL(margem);
     var pct = venda > 0 ? (margem / venda) * 100 : 0;
-    document.getElementById('finMargemSub').textContent = fmtPct(pct) + ' de margem';
-    document.getElementById('finCustoSub').textContent = total + ' ' + (total === 1 ? 'produto' : 'produtos');
+    document.getElementById('finMargemSub').textContent = fmtPct(pct) + ' de variação';
+    document.getElementById('finCustoSub').textContent = total + ' ' + (total === 1 ? 'item' : 'itens');
     document.getElementById('finVendaSub').textContent = items + ' ' + (items === 1 ? 'item' : 'itens') + ' em estoque';
   }
   function getFiltered() {
@@ -829,14 +837,14 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
     var list = getFiltered();
     if (products.length === 0) {
       body.innerHTML = ''; empty.style.display = 'block';
-      empty.querySelector('h3').textContent = 'Nenhum produto cadastrado';
-      empty.querySelector('p').textContent = 'Cadastre o primeiro item do seu estoque. Ele ficará disponível em todos os aparelhos.';
+      empty.querySelector('h3').textContent = 'Nenhum item cadastrado';
+      empty.querySelector('p').textContent = 'Cadastre o primeiro item de TI do seu inventário. Ele ficará disponível em todos os aparelhos.';
       empty.querySelector('button').style.display = ''; return;
     }
     if (list.length === 0) {
       body.innerHTML = ''; empty.style.display = 'block';
       empty.querySelector('h3').textContent = 'Nenhum resultado';
-      empty.querySelector('p').textContent = 'Nenhum produto corresponde aos filtros selecionados.';
+      empty.querySelector('p').textContent = 'Nenhum item corresponde aos filtros selecionados.';
       empty.querySelector('button').style.display = 'none'; return;
     }
     empty.style.display = 'none'; empty.querySelector('button').style.display = '';
@@ -846,7 +854,7 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
       var sup = p.supplier ? escapeHtml(p.supplier) : '<span class="muted-cell">—</span>';
       var skuHtml = p.sku ? '<div class="sku">' + escapeHtml(p.sku) + '</div>' : '';
       var valor = p.price * p.qty;
-      var priceHtml = '<div class="price-stack"><div class="custo">custo ' + fmtBRL(p.cost) + '</div><div class="venda">venda ' + fmtBRL(p.price) + '</div></div>';
+      var priceHtml = '<div class="price-stack"><div class="custo">custo ' + fmtBRL(p.cost) + '</div><div class="venda">reposição ' + fmtBRL(p.price) + '</div></div>';
       return '<tr>' +
         '<td><div class="product-name">' + escapeHtml(p.name) + '</div>' + skuHtml + '</td>' +
         '<td>' + cat + '</td>' +
@@ -875,7 +883,7 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
     var title = document.getElementById('modalTitle'); var editIdField = document.getElementById('editId');
     if (editId) {
       var p = products.filter(function (x) { return x.id === editId; })[0]; if (!p) return;
-      title.textContent = 'Editar Produto'; editIdField.value = p.id;
+      title.textContent = 'Editar Item'; editIdField.value = p.id;
       document.getElementById('inpName').value = p.name;
       document.getElementById('inpSku').value = p.sku;
       document.getElementById('inpCategory').value = p.category;
@@ -885,7 +893,7 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
       document.getElementById('inpCost').value = p.cost || '';
       document.getElementById('inpPrice').value = p.price || '';
     } else {
-      title.textContent = 'Cadastrar Produto'; editIdField.value = '';
+      title.textContent = 'Cadastrar Item'; editIdField.value = '';
       ['inpName','inpSku','inpCategory','inpSupplier','inpMin','inpCost','inpPrice'].forEach(function (id) { document.getElementById(id).value = ''; });
       document.getElementById('inpQty').value = '';
     }
@@ -921,15 +929,15 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
     op.then(function (res) {
       done();
       if (res.error) { toast('Erro ao salvar: ' + res.error.message, 'error'); return; }
-      closeModal(); toast(editId ? 'Produto atualizado!' : 'Produto cadastrado na nuvem!', 'success'); loadProducts();
+      closeModal(); toast(editId ? 'Item atualizado!' : 'Item cadastrado na nuvem!', 'success'); loadProducts();
     }).catch(function () { done(); toast('Falha de rede ao salvar.', 'error'); });
   };
   window.editProduct = function (id) { openModal(id); };
   window.deleteProduct = function (id) {
     var p = products.filter(function (x) { return x.id === id; })[0]; if (!p) return;
-    if (!confirm('Excluir "' + p.name + '"? Esta ação remove o produto de todos os aparelhos.')) return;
+    if (!confirm('Excluir "' + p.name + '"? Esta ação remove o item de todos os aparelhos.')) return;
     sb.from(T_PRODUTOS).delete().eq('id', id)
-      .then(function (res) { if (res.error) { toast('Erro ao excluir: ' + res.error.message, 'error'); return; } toast('Produto excluído.', 'success'); loadProducts(); })
+      .then(function (res) { if (res.error) { toast('Erro ao excluir: ' + res.error.message, 'error'); return; } toast('Item excluído.', 'success'); loadProducts(); })
       .catch(function () { toast('Falha de rede ao excluir.', 'error'); });
   };
   window.changeQty = function (id, delta) {
