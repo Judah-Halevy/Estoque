@@ -352,6 +352,10 @@ do $$ begin
   create policy "acesso via chave anonima" on empresa for all using (true) with check (true);
 exception when duplicate_object then null; end $$;
 
+-- ===== Permissoes para a chave publicavel (role anon) =====
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.produtos TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.empresa TO anon;
+
 -- ===== Sincronizacao em tempo real =====
 do $$ begin alter publication supabase_realtime add table produtos; exception when others then null; end $$;
 do $$ begin alter publication supabase_realtime add table empresa; exception when others then null; end $$;</pre>
@@ -395,7 +399,7 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
       <span class="conn-badge off" id="connBadge"><span class="conn-dot"></span><span id="connText">Conectando…</span></span>
       <button class="btn-ghost" onclick="openCompanyModal()">🏢 Perfil</button>
       <button class="btn-ghost" onclick="copyShareLink()" title="Copiar link de acesso para outro aparelho">🔗 Link</button>
-      <button class="btn-ghost" onclick="openSettings()" title="Configurações de nuvem">⚙️</button>
+      <button class="btn-ghost" id="settingsBtn" onclick="openSettings()" title="Configurações de nuvem">⚙️</button>
     </div>
   </div>
 
@@ -525,6 +529,13 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
   var T_PRODUTOS = 'produtos';
   var T_EMPRESA = 'empresa';
 
+  // ===== Configuração embutida (pré-conectada ao Supabase) =====
+  // Quando preenchida, o site abre já conectado, sem mostrar o assistente.
+  var EMBEDDED_CONFIG = {
+    url: 'https://muphjonfmkdrkcvazpvq.supabase.co',
+    anon: 'sb_publishable_yhh9oKKIBG8PrlMTj3qYKg_dM5NWqkb'
+  };
+
   var sb = null;
   var products = [];
   var company = { nome: '', setor: '', logo_url: '' };
@@ -533,7 +544,10 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
   var reloadTimer = null;
 
   /* ---------- Config ---------- */
-  function getConfig() { return { url: localStorage.getItem(CONFIG_URL_KEY), anon: localStorage.getItem(CONFIG_ANON_KEY) }; }
+  function getConfig() {
+    if (EMBEDDED_CONFIG && EMBEDDED_CONFIG.url && EMBEDDED_CONFIG.anon) return { url: EMBEDDED_CONFIG.url, anon: EMBEDDED_CONFIG.anon };
+    return { url: localStorage.getItem(CONFIG_URL_KEY), anon: localStorage.getItem(CONFIG_ANON_KEY) };
+  }
   function saveConfig(url, anon) { localStorage.setItem(CONFIG_URL_KEY, url); localStorage.setItem(CONFIG_ANON_KEY, anon); }
   function clearConfig() { localStorage.removeItem(CONFIG_URL_KEY); localStorage.removeItem(CONFIG_ANON_KEY); }
 
@@ -629,6 +643,10 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
   };
 
   window.openSettings = function () {
+    if (EMBEDDED_CONFIG && EMBEDDED_CONFIG.url) {
+      alert('A conexão com a nuvem já vem embutida neste arquivo (URL e chave pré-configuradas). Não é possível reconfigurar pela interface — para trocar de projeto, edite a constante EMBEDDED_CONFIG no código do index.html.');
+      return;
+    }
     if (!confirm('Reconfigurar a conexão com a nuvem? Os dados no servidor não serão apagados.')) return;
     clearConfig();
     if (realtimeChannel) { try { realtimeChannel.unsubscribe(); } catch (e) {} realtimeChannel = null; }
@@ -673,6 +691,9 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
     sb = window.supabase.createClient(url, anon);
     document.getElementById('setupOverlay').style.display = 'none';
     document.getElementById('appContainer').style.display = 'block';
+    if (EMBEDDED_CONFIG && EMBEDDED_CONFIG.url) {
+      var gear = document.getElementById('settingsBtn'); if (gear) gear.style.display = 'none';
+    }
     document.getElementById('footerYear').textContent = new Date().getFullYear();
     setConn('off', 'Sincronizando…');
     bindEvents();
@@ -872,7 +893,7 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
     setTimeout(function () { document.getElementById('inpName').focus(); }, 50);
   };
   window.closeModal = function () { document.getElementById('modalOverlay').classList.remove('active'); };
-  function saveProduct() {
+  window.saveProduct = function () {
     clearErrors();
     var name = document.getElementById('inpName').value.trim();
     var qtyRaw = document.getElementById('inpQty').value;
@@ -902,7 +923,7 @@ do $$ begin alter publication supabase_realtime add table empresa; exception whe
       if (res.error) { toast('Erro ao salvar: ' + res.error.message, 'error'); return; }
       closeModal(); toast(editId ? 'Produto atualizado!' : 'Produto cadastrado na nuvem!', 'success'); loadProducts();
     }).catch(function () { done(); toast('Falha de rede ao salvar.', 'error'); });
-  }
+  };
   window.editProduct = function (id) { openModal(id); };
   window.deleteProduct = function (id) {
     var p = products.filter(function (x) { return x.id === id; })[0]; if (!p) return;
