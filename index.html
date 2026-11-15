@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estoque de TI · Painel de Inventário</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --navy: #0d1424;
+    --navy-2: #111a2e;
+    --ink: #e8edf6;
+    --slate: #9aa6bd;
+    --slate-2: #7c89a0;
+    --slate-3: #56607a;
+    --line: #232d42;
+    --line-2: #171f30;
+    --bg: #0a0f1c;
+    --card: #121a2b;
+    --card-2: #192238;
+    --accent: #3b82f6;
+    --accent-dark: #2563eb;
+    --accent-light: rgba(59,130,246,.16);
+    --success: #22c55e;
+    --success-light: rgba(34,197,94,.15);
+    --warn: #f59e0b;
+    --warn-light: rgba(245,158,11,.15);
+    --danger: #ef4444;
+    --danger-light: rgba(239,68,68,.15);
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 1px 3px rgba(0,0,0,.25);
+    --shadow-lg: 0 12px 34px rgba(0,0,0,.55);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 560px at 50% -260px, rgba(59,130,246,.10), transparent 60%), var(--bg);
+    color: var(--ink); line-height: 1.5; min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::placeholder { color: var(--slate-3); opacity: 1; }
+  select option { background: var(--card); color: var(--ink); }
+  ::selection { background: var(--accent-light); }
+
+  /* ===== Top bar (branding) ===== */
+  .topbar {
+    background: var(--card); border-bottom: 1px solid var(--line);
+    padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; position: sticky; top: 0; z-index: 30;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .monogram {
+    width: 40px; height: 40px; border-radius: 9px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff;
+    font-weight: 700; font-size: 15px; letter-spacing: .3px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+  }
+  .monogram img { width: 100%; height: 100%; object-fit: cover; }
+  .brand-text { min-width: 0; }
+  .brand-text .name { font-size: 15px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+  .brand-text .name.placeholder { color: var(--slate-3); font-weight: 600; }
+  .brand-text .sector { font-size: 12px; color: var(--slate-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; }
+  .conn-badge {
+    display: inline-flex; align-items: center; gap: 7px; background: var(--line-2);
+    padding: 6px 12px; border-radius: 30px; font-size: 12px; font-weight: 600; color: var(--slate);
+  }
+  .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--slate-3); }
+  .conn-badge.on { background: var(--success-light); color: #4ade80; }
+  .conn-badge.on .conn-dot { background: var(--success); }
+  .conn-badge.off { background: var(--line-2); color: var(--slate); }
+  .conn-badge.err { background: var(--danger-light); color: #fca5a5; }
+  .conn-badge.err .conn-dot { background: var(--danger); }
+  .btn-ghost {
+    background: var(--card); color: var(--slate); border: 1px solid var(--line);
+    padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; transition: background .12s, color .12s, border-color .12s;
+  }
+  .btn-ghost:hover { background: var(--line-2); color: var(--ink); }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 28px 24px 40px; }
+
+  .page-head { margin-bottom: 24px; }
+  .page-head h1 { font-size: 22px; font-weight: 700; letter-spacing: -.2px; }
+  .page-head p { font-size: 13px; color: var(--slate-2); margin-top: 3px; }
+
+  /* ===== Stats ===== */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .stat .label { font-size: 11px; color: var(--slate-2); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+  .stat .value { font-size: 24px; font-weight: 700; margin-top: 6px; letter-spacing: -.3px; }
+  .stat .value.muted { color: var(--slate-2); font-size: 13px; font-weight: 600; }
+  .stat.blue { border-top: 3px solid var(--accent); }
+  .stat.green { border-top: 3px solid var(--success); }
+  .stat.orange { border-top: 3px solid var(--warn); }
+  .stat.red { border-top: 3px solid var(--danger); }
+
+  /* ===== Toolbar ===== */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  .search-wrap { position: relative; flex: 1; min-width: 220px; }
+  .search-wrap input {
+    width: 100%; padding: 10px 13px 10px 36px; border: 1px solid var(--line); border-radius: 8px;
+    font-size: 13px; background: var(--card); color: var(--ink);
+  }
+  .search-wrap input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+  .search-wrap .icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--slate-3); font-size: 14px; pointer-events: none; }
+  select.filter-select {
+    padding: 10px 13px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px;
+    background: var(--card); color: var(--ink); cursor: pointer;
+  }
+  select.filter-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+
+  .btn {
+    padding: 10px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+    transition: background .12s, transform .04s; white-space: nowrap;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-dark); }
+  .btn-secondary { background: var(--card); color: var(--ink); border: 1px solid var(--line); }
+  .btn-secondary:hover:not(:disabled) { background: var(--line-2); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+  .btn-block { width: 100%; justify-content: center; }
+
+  /* ===== Table ===== */
+  .card-panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 720px; }
+  thead th {
+    background: var(--line-2); color: var(--slate-2); font-size: 10px; text-transform: uppercase;
+    letter-spacing: .6px; font-weight: 700; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line);
+  }
+  thead th.center { text-align: center; }
+  thead th.right { text-align: right; }
+  tbody td { padding: 12px 14px; border-bottom: 1px solid var(--line-2); font-size: 13px; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,.025); }
+  .product-name { font-weight: 600; color: var(--ink); }
+  .sku { font-size: 11px; color: var(--slate-3); font-family: 'SF Mono', Consolas, monospace; margin-top: 1px; }
+  .tag {
+    display: inline-block; background: var(--accent-light); color: #93c5fd;
+    font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px;
+  }
+  .muted-cell { color: var(--slate-3); }
+  .qty-cell { text-align: center; }
+  .qty-control { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+  .qty-control button {
+    width: 26px; height: 26px; border: none; background: var(--line-2); color: var(--ink);
+    font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .qty-control button:hover:not(:disabled) { background: var(--line); }
+  .qty-control button:disabled { opacity: .4; cursor: not-allowed; }
+  .qty-control .qty-value { min-width: 38px; text-align: center; font-weight: 700; font-size: 13px; }
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge.ok { background: var(--success-light); color: var(--success); }
+  .badge.low { background: var(--warn-light); color: var(--warn); }
+  .badge.zero { background: var(--danger-light); color: var(--danger); }
+  .actions { display: flex; gap: 5px; justify-content: center; }
+  .icon-btn {
+    width: 30px; height: 30px; border: 1px solid var(--line); background: var(--card);
+    border-radius: 7px; cursor: pointer; font-size: 13px;
+    display: inline-flex; align-items: center; justify-content: center; transition: background .12s, border-color .12s, color .12s;
+  }
+  .icon-btn:hover:not(:disabled) { background: var(--line-2); }
+  .icon-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .icon-btn.edit:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+  .icon-btn.delete:hover:not(:disabled) { color: var(--danger); border-color: var(--danger); }
+
+  .empty { text-align: center; padding: 56px 20px; color: var(--slate-2); }
+  .empty .big-icon { font-size: 42px; margin-bottom: 10px; opacity: .4; }
+  .empty h3 { font-size: 16px; color: var(--ink); margin-bottom: 5px; }
+  .empty p { font-size: 13px; margin-bottom: 14px; }
+  .loading-row td { text-align: center; padding: 36px; color: var(--slate-2); font-size: 13px; }
+  .spinner {
+    width: 20px; height: 20px; border: 3px solid var(--line); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== Footer ===== */
+  .footer {
+    border-top: 1px solid var(--line); margin-top: 32px; padding: 18px 0; text-align: center;
+    font-size: 12px; color: var(--slate-2);
+  }
+  .footer .co { color: var(--ink); font-weight: 600; }
+  .footer .sep { margin: 0 8px; color: var(--slate-3); }
+
+  /* ===== Modal ===== */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 60;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--card); border-radius: 12px; width: 100%; max-width: 520px; box-shadow: var(--shadow-lg); overflow: hidden; animation: pop .15s ease-out; max-height: 92vh; display: flex; flex-direction: column; }
+  @keyframes pop { from { transform: scale(.97); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+  .modal-header h2 { font-size: 16px; font-weight: 700; }
+  .modal-header .close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--slate-2); line-height: 1; }
+  .modal-header .close:hover { color: var(--ink); }
+  .modal-body { padding: 18px 20px; overflow-y: auto; }
+  .modal-footer { padding: 13px 20px; border-top: 1px solid var(--line); background: var(--bg); display: flex; gap: 10px; justify-content: flex-end; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--slate); margin-bottom: 5px; }
+  .field label .req { color: var(--danger); }
+  .field input, .field select {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: var(--card); color: var(--ink);
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+  .field .hint { font-size: 11px; color: var(--slate-3); margin-top: 4px; }
+  .field.error input, .field.error select { border-color: var(--danger); }
+  .field .err-msg { color: var(--danger); font-size: 11px; margin-top: 4px; display: none; }
+  .field.error .err-msg { display: block; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--slate-2); font-weight: 700; margin: 14px 0 8px; }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed; bottom: 22px; right: 22px; background: var(--card-2); color: var(--ink); border: 1px solid var(--line);
+    padding: 11px 18px; border-radius: 9px; font-size: 13px; box-shadow: var(--shadow-lg);
+    opacity: 0; transform: translateY(10px); transition: opacity .2s, transform .2s; z-index: 100; pointer-events: none; max-width: 320px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  .toast.warn { background: var(--warn); }
+
+  /* ===== Setup ===== */
+  .setup-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 200; overflow: auto; }
+  .setup-wrap { max-width: 740px; margin: 0 auto; padding: 40px 24px 80px; }
+  .setup-head { text-align: center; margin-bottom: 26px; }
+  .setup-head .logo { width: 52px; height: 52px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; font-size: 24px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .setup-head h1 { font-size: 24px; font-weight: 700; letter-spacing: -.2px; }
+  .setup-head p { color: var(--slate-2); margin-top: 5px; font-size: 14px; }
+  .setup-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .setup-card h2 { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 9px; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .setup-card p, .setup-card li { font-size: 13px; color: var(--ink); line-height: 1.6; }
+  .setup-card ul { padding-left: 18px; margin: 8px 0; }
+  .setup-card li { margin-bottom: 4px; }
+  .setup-card a { color: var(--accent); font-weight: 600; }
+  .setup-card code { background: var(--line-2); padding: 1px 6px; border-radius: 4px; font-size: 12px; font-family: 'SF Mono', Consolas, monospace; }
+  .setup-card .note { background: var(--warn-light); color: #fbbf24; border-radius: 8px; padding: 11px 13px; font-size: 12px; margin-top: 12px; border-left: 3px solid var(--warn); }
+  .setup-card .note strong { color: #fcd34d; }
+  .code-block { position: relative; background: #060a14; color: #e2e8f0; border: 1px solid var(--line); border-radius: 9px; padding: 14px; margin: 10px 0; font-family: 'SF Mono', Consolas, Monaco, monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; }
+  .code-block pre { margin: 0; white-space: pre; }
+  .copy-btn { position: absolute; top: 7px; right: 7px; background: rgba(255,255,255,.12); color: #fff; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .copy-btn:hover { background: rgba(255,255,255,.22); }
+  .copy-btn.copied { background: var(--success); }
+  .field-row { margin-bottom: 12px; }
+  .field-row label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: var(--slate); }
+  .field-row input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; font-family: 'SF Mono', Consolas, monospace; }
+  .field-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+  .setup-error { display: none; background: var(--danger-light); color: #fca5a5; border-radius: 8px; padding: 11px 13px; font-size: 12px; margin-top: 10px; border-left: 3px solid var(--danger); }
+  .setup-error.show { display: block; }
+  .setup-status { text-align: center; color: var(--slate-2); font-size: 12px; margin-top: 14px; }
+  .setup-status a { color: var(--accent); font-weight: 600; cursor: pointer; }
+
+  @media (max-width: 860px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 720px) {
+    .row-2 { grid-template-columns: 1fr; }
+    .container { padding: 20px 14px 32px; }
+    .topbar { padding: 10px 14px; }
+    .brand-text .name { max-width: 160px; }
+    .setup-wrap { padding: 28px 16px 60px; }
+    .setup-card { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Setup overlay ===== -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-wrap">
+    <div class="setup-head">
+      <div class="logo">📦</div>
+      <h1>Configurar Painel na Nuvem</h1>
+      <p>Configure uma vez e acesse seu estoque de qualquer aparelho, com sincronização automática.</p>
+    </div>
+
+    <div class="setup-card">
+      <h2><span class="step-num">1</span> Criar conta gratuita no Supabase</h2>
+      <p>O Supabase é um banco de dados na nuvem (plano gratuito: 500 MB e 50.000 leituras/mês — suficiente para uso empresarial de pequeno/médio porte).</p>
+      <ul>
+        <li>Acesse <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a> → <strong>Start your project</strong>.</li>
+        <li>Crie a conta (pode usar GitHub) e clique em <strong>New project</strong>.</li>
+        <li>Dê um nome, escolha a região mais próxima e clique em <strong>Create new project</strong> (≈2 min).</li>
+      </ul>
+    </div>
+
+    <div class="setup-card">
+      <h2><span class="step-num">2</span> Criar as tabelas no banco</h2>
+      <p>No painel: <strong>SQL Editor</strong> → <strong>New query</strong>. Cole o código abaixo e clique em <strong>Run</strong>. Ele cria as tabelas <code>produtos</code> e <code>empresa</code>, libera o acesso e ativa a sincronização em tempo real. Pode rodar mais de uma vez sem erro (é idempotente).</p>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copySql(this)">Copiar</button>
+<pre id="sqlBlock">-- ===== Tabela: produtos =====
+create table if not exists produtos (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  quantidade integer not null default 0,
+  minimo integer not null default 0,
+  categoria text default '',
+  criado_em timestamptz default now(),
+  atualizado_em timestamptz default now()
+);
+
+-- colunas novas (nao faz nada se ja existirem)
+alter table produtos add column if not exists sku text default '';
+alter table produtos add column if not exists fornecedor text default '';
+
+alter table produtos enable row level security;
+do $$ begin
+  create policy "acesso via chave anonima" on produtos for all using (true) with check (true);
+exception when duplicate_object then null; end $$;
+
+-- ===== Tabela: empresa (perfil, 1 linha) =====
+create table if not exists empresa (
+  id int primary key,
+  nome text default '',
+  setor text default '',
+  logo_url text default ''
+);
+insert into empresa (id, nome, setor, logo_url) values (1, '', '', '')
+  on conflict (id) do nothing;
+alter table empresa enable row level security;
+do $$ begin
+  create policy "acesso via chave anonima" on empresa for all using (true) with check (true);
+exception when duplicate_object then null; end $$;
+
+-- ===== Permissoes para a chave publicavel (role anon) =====
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.produtos TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.empresa TO anon;
+
+-- ===== Sincronizacao em tempo real =====
+do $$ begin alter publication supabase_realtime add table produtos; exception when others then null; end $$;
+do $$ begin alter publication supabase_realtime add table empresa; exception when others then null; end $$;</pre>
+      </div>
+      <div class="note">
+        <strong>Segurança:</strong> com esta configuração, quem tiver a URL e a chave (ou o link de acesso) consegue ler e editar seus itens de TI. Para uso interno, basta <strong>não compartilhar o link publicamente</strong>. Se quiser login por senha depois, é só pedir.
+      </div>
+    </div>
+
+    <div class="setup-card">
+      <h2><span class="step-num">3</span> Copiar a URL e a chave do projeto</h2>
+      <p>No painel: <strong>Project Settings</strong> (engrenagem) → <strong>API</strong>:</p>
+      <ul>
+        <li>Copie a <strong>Project URL</strong> (ex.: <code>https://abc123.supabase.co</code>).</li>
+        <li>Copie a <strong>anon public key</strong> (chave pública, <em>não</em> a <code>service_role</code>).</li>
+      </ul>
+    </div>
+
+    <div class="setup-card">
+      <h2><span class="step-num">4</span> Conectar o painel</h2>
+      <div class="field-row"><label>Project URL</label><input type="text" id="inpUrl" placeholder="https://abc123.supabase.co" autocomplete="off" spellcheck="false"></div>
+      <div class="field-row"><label>anon public key</label><input type="text" id="inpKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." autocomplete="off" spellcheck="false"></div>
+      <button class="btn btn-primary btn-block" id="btnConnect" onclick="connect()"><span id="btnConnectText">⚡ Conectar e começar</span></button>
+      <div class="setup-error" id="setupError"></div>
+      <div class="setup-status">Preferiu não usar a nuvem? <a href="estoque.html">abrir versão local</a>.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== App ===== -->
+<div id="appContainer" style="display:none;">
+  <div class="topbar">
+    <div class="brand">
+      <div class="monogram" id="brandMonogram">TI</div>
+      <div class="brand-text">
+        <div class="name placeholder" id="brandName">Nome da Empresa</div>
+        <div class="sector" id="brandSector">Defina o perfil em 🏢 Perfil</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span class="conn-badge off" id="connBadge"><span class="conn-dot"></span><span id="connText">Conectando…</span></span>
+      <button class="btn-ghost" onclick="openCompanyModal()">🏢 Perfil</button>
+      <button class="btn-ghost" onclick="copyShareLink()" title="Copiar link de acesso para outro aparelho">🔗 Link</button>
+      <button class="btn-ghost" id="settingsBtn" onclick="openSettings()" title="Configurações de nuvem">⚙️</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="page-head">
+      <h1>Inventário de TI</h1>
+      <p>Controle de equipamentos, periféricos, licenças e insumos de tecnologia</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat blue"><div class="label">Total de Itens</div><div class="value" id="statTotal">0</div></div>
+      <div class="stat green"><div class="label">Itens em Estoque</div><div class="value" id="statItems">0</div></div>
+      <div class="stat orange"><div class="label">Estoque Baixo</div><div class="value" id="statLow">0</div></div>
+      <div class="stat red"><div class="label">Sem Estoque</div><div class="value" id="statZero">0</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-wrap"><span class="icon">🔍</span><input type="text" id="searchInput" placeholder="Buscar por nome, SKU ou fornecedor..."></div>
+      <select class="filter-select" id="categoryFilter"><option value="">Categorias</option></select>
+      <select class="filter-select" id="supplierFilter"><option value="">Fornecedores</option></select>
+      <select class="filter-select" id="statusFilter">
+        <option value="">Status</option>
+        <option value="ok">Em estoque</option>
+        <option value="low">Estoque baixo</option>
+        <option value="zero">Sem estoque</option>
+      </select>
+      <button class="btn btn-primary" onclick="openModal()">＋ Novo Item</button>
+    </div>
+
+    <div class="card-panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th><th>Categoria</th><th>Fornecedor</th>
+              <th class="center">Qtd</th><th class="center">Status</th><th class="center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="productTableBody"><tr class="loading-row"><td colspan="6"><span class="spinner"></span> Carregando inventário…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyState" style="display:none;">
+        <div class="big-icon">🖥️</div>
+        <h3>Nenhum item cadastrado</h3>
+        <p>Cadastre o primeiro item de TI do seu inventário. Ele ficará disponível em todos os aparelhos.</p>
+        <button class="btn btn-primary" onclick="openModal()">＋ Cadastrar Item</button>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span class="co" id="footerCompany">Estoque de TI</span><span class="sep">·</span>Painel de Inventário de Tecnologia<span class="sep">·</span>© <span id="footerYear">2026</span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Item -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header"><h2 id="modalTitle">Cadastrar Item</h2><button class="close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="field" id="field-name">
+        <label>Nome do Item <span class="req">*</span></label>
+        <input type="text" id="inpName" placeholder="Ex: Notebook Dell Latitude 5440" autocomplete="off">
+        <div class="err-msg">Informe o nome do item.</div>
+      </div>
+      <div class="form-section-title">Identificação</div>
+      <div class="row-2">
+        <div class="field"><label>SKU / Código</label><input type="text" id="inpSku" placeholder="Ex: NB-DEL-5440" autocomplete="off"><div class="hint">Código interno / patrimonial do item.</div></div>
+        <div class="field"><label>Categoria</label><input type="text" id="inpCategory" placeholder="Ex: Periféricos" list="catList" autocomplete="off"></div>
+      </div>
+      <div class="field"><label>Fornecedor</label><input type="text" id="inpSupplier" placeholder="Ex: Compufour" list="supList" autocomplete="off"></div>
+      <div class="form-section-title">Estoque</div>
+      <div class="row-2">
+        <div class="field" id="field-qty"><label>Quantidade <span class="req">*</span></label><input type="number" id="inpQty" placeholder="0" min="0" step="1"><div class="err-msg">Quantidade inválida.</div></div>
+        <div class="field"><label>Estoque Mínimo</label><input type="number" id="inpMin" placeholder="5" min="0" step="1"><div class="hint">Alerta quando baixar.</div></div>
+      </div>
+      <datalist id="catList"></datalist><datalist id="supList"></datalist>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btnSave" onclick="saveProduct()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Perfil da Empresa -->
+<div class="modal-overlay" id="companyOverlay">
+  <div class="modal">
+    <div class="modal-header"><h2>Perfil da Empresa</h2><button class="close" onclick="closeCompanyModal()">×</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Nome da Empresa</label><input type="text" id="inpCoName" placeholder="Ex: TechCorp Soluções" autocomplete="off"></div>
+      <div class="field"><label>Setor / Área de TI</label><input type="text" id="inpCoSector" placeholder="Ex: Infraestrutura & Redes" autocomplete="off"></div>
+      <div class="field"><label>URL do Logotipo (opcional)</label><input type="text" id="inpCoLogo" placeholder="https://...logo.png" autocomplete="off" spellcheck="false"><div class="hint">Cole o link de uma imagem. Se vazio, usamos as iniciais do nome como logotipo.</div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCompanyModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btnSaveCo" onclick="saveCompany()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function () {
+  'use strict';
+
+  var CONFIG_URL_KEY = 'estoque_sb_url';
+  var CONFIG_ANON_KEY = 'estoque_sb_anon';
+  var T_PRODUTOS = 'produtos';
+  var T_EMPRESA = 'empresa';
+
+  // ===== Configuração embutida (pré-conectada ao Supabase) =====
+  // Quando preenchida, o site abre já conectado, sem mostrar o assistente.
+  var EMBEDDED_CONFIG = {
+    url: 'https://muphjonfmkdrkcvazpvq.supabase.co',
+    anon: 'sb_publishable_yhh9oKKIBG8PrlMTj3qYKg_dM5NWqkb'
+  };
+
+  var sb = null;
+  var products = [];
+  var company = { nome: '', setor: '', logo_url: '' };
+  var filters = { search: '', category: '', supplier: '', status: '' };
+  var realtimeChannel = null;
+  var reloadTimer = null;
+
+  /* ---------- Config ---------- */
+  function getConfig() {
+    if (EMBEDDED_CONFIG && EMBEDDED_CONFIG.url && EMBEDDED_CONFIG.anon) return { url: EMBEDDED_CONFIG.url, anon: EMBEDDED_CONFIG.anon };
+    return { url: localStorage.getItem(CONFIG_URL_KEY), anon: localStorage.getItem(CONFIG_ANON_KEY) };
+  }
+  function saveConfig(url, anon) { localStorage.setItem(CONFIG_URL_KEY, url); localStorage.setItem(CONFIG_ANON_KEY, anon); }
+  function clearConfig() { localStorage.removeItem(CONFIG_URL_KEY); localStorage.removeItem(CONFIG_ANON_KEY); }
+
+  /* ---------- Util ---------- */
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function toast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast ' + (type || '') + ' show';
+    clearTimeout(t._timer); t._timer = setTimeout(function () { t.className = 'toast'; }, 2400);
+  }
+  function statusOf(p) {
+    var qty = parseInt(p.qty, 10) || 0;
+    var min = parseInt(p.min, 10) || 0;
+    if (qty <= 0) return 'zero';
+    if (min > 0 && qty <= min) return 'low';
+    return 'ok';
+  }
+  function norm(p) {
+    return {
+      id: p.id,
+      name: p.nome || '',
+      sku: p.sku || '',
+      category: p.categoria || '',
+      supplier: p.fornecedor || '',
+      qty: parseInt(p.quantidade, 10) || 0,
+      min: parseInt(p.minimo, 10) || 0
+    };
+  }
+  function monogram(name) {
+    if (!name) return 'TI';
+    var parts = name.trim().split(/\s+/).filter(function (w) { return w.length > 0; });
+    if (parts.length === 0) return 'TI';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  function setConn(state, text) {
+    var badge = document.getElementById('connBadge');
+    badge.className = 'conn-badge ' + (state || 'off');
+    document.getElementById('connText').textContent = text;
+  }
+
+  /* ---------- Setup ---------- */
+  window.copySql = function (btn) {
+    var sql = document.getElementById('sqlBlock').textContent.trim();
+    var done = function () { btn.textContent = '✓ Copiado'; btn.classList.add('copied'); setTimeout(function () { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 1800); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(sql).then(done).catch(function () { toast('Selecione e copie com Ctrl+C', 'warn'); });
+    } else { toast('Selecione e copie com Ctrl+C', 'warn'); }
+  };
+
+  window.connect = function () {
+    var url = document.getElementById('inpUrl').value.trim();
+    var anon = document.getElementById('inpKey').value.trim();
+    var errEl = document.getElementById('setupError');
+    errEl.classList.remove('show');
+    if (!url || !anon) { errEl.textContent = 'Preencha a URL e a chave anônima.'; errEl.classList.add('show'); return; }
+    if (url.indexOf('supabase.co') === -1) { errEl.textContent = 'A URL deve terminar com supabase.co (ex.: https://abc123.supabase.co).'; errEl.classList.add('show'); return; }
+    if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+      errEl.textContent = 'SDK do Supabase não carregou. Verifique a internet e recarregue a página.'; errEl.classList.add('show'); return;
+    }
+    var btn = document.getElementById('btnConnect');
+    var btnText = document.getElementById('btnConnectText');
+    btn.disabled = true; btnText.textContent = 'Conectando…';
+    var test = window.supabase.createClient(url, anon);
+    test.from(T_PRODUTOS).select('id').limit(1)
+      .then(function (res) {
+        if (res.error) throw res.error;
+        saveConfig(url, anon);
+        btn.disabled = false; btnText.textContent = '⚡ Conectar e começar';
+        startApp(url, anon);
+      })
+      .catch(function (err) {
+        btn.disabled = false; btnText.textContent = '⚡ Conectar e começar';
+        var msg = (err && err.message) ? err.message : String(err);
+        var hint = '';
+        if (/relation "produtos" does not exist|could not find/i.test(msg)) hint = ' A tabela "produtos" ainda não foi criada. Volte ao Passo 2 e execute o SQL.';
+        else if (/Failed to fetch|NetworkError|load failed/i.test(msg)) hint = ' Falha de rede: confira a URL e sua conexão.';
+        else if (/Invalid API key|JWT/i.test(msg)) hint = ' A chave anônica parece incorreta. Copie a "anon public key".';
+        errEl.textContent = 'Não foi possível conectar: ' + msg + '.' + hint;
+        errEl.classList.add('show');
+      });
+  };
+
+  window.openSettings = function () {
+    if (EMBEDDED_CONFIG && EMBEDDED_CONFIG.url) {
+      alert('A conexão com a nuvem já vem embutida neste arquivo (URL e chave pré-configuradas). Não é possível reconfigurar pela interface — para trocar de projeto, edite a constante EMBEDDED_CONFIG no código do index.html.');
+      return;
+    }
+    if (!confirm('Reconfigurar a conexão com a nuvem? Os dados no servidor não serão apagados.')) return;
+    clearConfig();
+    if (realtimeChannel) { try { realtimeChannel.unsubscribe(); } catch (e) {} realtimeChannel = null; }
+    sb = null;
+    document.getElementById('appContainer').style.display = 'none';
+    document.getElementById('setupOverlay').style.display = 'block';
+    document.getElementById('inpUrl').value = ''; document.getElementById('inpKey').value = '';
+  };
+
+  /* ---------- Share link ---------- */
+  function buildShareLink() {
+    var cfg = getConfig();
+    if (!cfg.url || !cfg.anon) return null;
+    var payload = encodeURIComponent(cfg.url) + '|' + encodeURIComponent(cfg.anon);
+    var encoded; try { encoded = btoa(payload); } catch (e) { return null; }
+    return window.location.origin + window.location.pathname + window.location.search + '#sb=' + encoded;
+  }
+  window.copyShareLink = function () {
+    var link = buildShareLink();
+    if (!link) { toast('Configure a nuvem primeiro.', 'warn'); return; }
+    var done = function () { toast('Link copiado! Abra em outro aparelho para acessar o mesmo estoque.', 'success'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done).catch(function () { window.prompt('Copie o link abaixo:', link); });
+    else window.prompt('Copie o link abaixo:', link);
+  };
+  function parseHashConfig() {
+    var hash = window.location.hash || '';
+    var m = hash.match(/[#&]sb=([^&]+)/);
+    if (!m) return false;
+    try {
+      var decoded = atob(decodeURIComponent(m[1]));
+      var parts = decoded.split('|');
+      if (parts.length === 2) {
+        var url = decodeURIComponent(parts[0]); var anon = decodeURIComponent(parts[1]);
+        if (url && anon) { saveConfig(url, anon); history.replaceState(null, '', window.location.pathname + window.location.search); return true; }
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  /* ---------- Start ---------- */
+  function startApp(url, anon) {
+    sb = window.supabase.createClient(url, anon);
+    document.getElementById('setupOverlay').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'block';
+    if (EMBEDDED_CONFIG && EMBEDDED_CONFIG.url) {
+      var gear = document.getElementById('settingsBtn'); if (gear) gear.style.display = 'none';
+    }
+    document.getElementById('footerYear').textContent = new Date().getFullYear();
+    setConn('off', 'Sincronizando…');
+    bindEvents();
+    loadCompany();
+    loadProducts();
+    subscribeRealtime();
+  }
+
+  /* ---------- Data: empresa ---------- */
+  function loadCompany() {
+    if (!sb) return;
+    sb.from(T_EMPRESA).select('*').eq('id', 1).maybeSingle()
+      .then(function (res) {
+        if (res.error) { renderBrand(); return; }
+        if (res.data) { company = { nome: res.data.nome || '', setor: res.data.setor || '', logo_url: res.data.logo_url || '' }; }
+        renderBrand();
+      })
+      .catch(function () { renderBrand(); });
+  }
+  function renderBrand() {
+    var nameEl = document.getElementById('brandName');
+    var sectorEl = document.getElementById('brandSector');
+    var monoEl = document.getElementById('brandMonogram');
+    var footerCo = document.getElementById('footerCompany');
+    if (company.nome) { nameEl.textContent = company.nome; nameEl.classList.remove('placeholder'); }
+    else { nameEl.textContent = 'Nome da Empresa'; nameEl.classList.add('placeholder'); }
+    sectorEl.textContent = company.setor || (company.nome ? '' : 'Defina o perfil em 🏢 Perfil');
+    if (company.logo_url) { monoEl.innerHTML = '<img src="' + escapeHtml(company.logo_url) + '" alt="" onerror="this.parentNode.innerHTML=\'' + monogram(company.nome) + '\'">'; }
+    else { monoEl.textContent = monogram(company.nome); }
+    footerCo.textContent = company.nome || 'Painel de Estoque';
+  }
+  window.openCompanyModal = function () {
+    document.getElementById('inpCoName').value = company.nome || '';
+    document.getElementById('inpCoSector').value = company.setor || '';
+    document.getElementById('inpCoLogo').value = company.logo_url || '';
+    document.getElementById('companyOverlay').classList.add('active');
+    setTimeout(function () { document.getElementById('inpCoName').focus(); }, 50);
+  };
+  window.closeCompanyModal = function () { document.getElementById('companyOverlay').classList.remove('active'); };
+  window.saveCompany = function () {
+    var nome = document.getElementById('inpCoName').value.trim();
+    var setor = document.getElementById('inpCoSector').value.trim();
+    var logo = document.getElementById('inpCoLogo').value.trim();
+    var btn = document.getElementById('btnSaveCo'); btn.disabled = true; btn.textContent = 'Salvando…';
+    sb.from(T_EMPRESA).upsert({ id: 1, nome: nome, setor: setor, logo_url: logo }).select().single()
+      .then(function (res) {
+        btn.disabled = false; btn.textContent = 'Salvar';
+        if (res.error) { toast('Erro ao salvar perfil: ' + res.error.message, 'error'); return; }
+        company = { nome: nome, setor: setor, logo_url: logo };
+        renderBrand();
+        closeCompanyModal();
+        toast('Perfil da empresa atualizado!', 'success');
+      })
+      .catch(function () { btn.disabled = false; btn.textContent = 'Salvar'; toast('Falha de rede ao salvar perfil.', 'error'); });
+  };
+
+  /* ---------- Data: produtos ---------- */
+  function loadProducts() {
+    if (!sb) return;
+    setConn('off', 'Sincronizando…');
+    sb.from(T_PRODUTOS).select('*').order('nome', { ascending: true })
+      .then(function (res) {
+        if (res.error) { setConn('err', 'Erro'); toast('Erro ao carregar: ' + res.error.message, 'error'); products = []; }
+        else { products = (res.data || []).map(norm); setConn('on', 'Online'); }
+        renderAll();
+      })
+      .catch(function () { setConn('err', 'Sem conexão'); toast('Falha de rede ao carregar.', 'error'); renderAll(); });
+  }
+  function subscribeRealtime() {
+    if (!sb) return;
+    try {
+      realtimeChannel = sb.channel('db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: T_PRODUTOS }, function () {
+          clearTimeout(reloadTimer); reloadTimer = setTimeout(function () { loadProducts(); toast('Estoque atualizado a partir de outro aparelho', 'success'); }, 400);
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: T_EMPRESA }, function () { loadCompany(); })
+        .subscribe();
+    } catch (e) {}
+  }
+
+  /* ---------- Render ---------- */
+  function uniq(field) { var s = {}; products.forEach(function (p) { if (p[field]) s[p[field]] = true; }); return Object.keys(s).sort(); }
+  var DEFAULT_CATEGORIES = ['Notebooks', 'Desktops', 'Servidores', 'Periféricos', 'Monitores', 'Networking', 'Cabos', 'Armazenamento', 'Memórias', 'Licenças', 'Segurança', 'Acessórios', 'Mobilidade', 'Energia'];
+  function renderFilters() {
+    var cats = uniq('category'); var sups = uniq('supplier');
+    var cs = document.getElementById('categoryFilter'); var cur1 = cs.value;
+    cs.innerHTML = '<option value="">Categorias</option>' + cats.map(function (c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join(''); cs.value = cur1;
+    var ss = document.getElementById('supplierFilter'); var cur2 = ss.value;
+    ss.innerHTML = '<option value="">Fornecedores</option>' + sups.map(function (s) { return '<option value="' + escapeHtml(s) + '">' + escapeHtml(s) + '</option>'; }).join(''); ss.value = cur2;
+    var merged = cats.concat(DEFAULT_CATEGORIES.filter(function (c) { return cats.indexOf(c) === -1; }));
+    document.getElementById('catList').innerHTML = merged.map(function (c) { return '<option value="' + escapeHtml(c) + '">'; }).join('');
+    document.getElementById('supList').innerHTML = sups.map(function (s) { return '<option value="' + escapeHtml(s) + '">'; }).join('');
+  }
+  function renderStats() {
+    var total = products.length, items = 0, low = 0, zero = 0;
+    products.forEach(function (p) {
+      items += p.qty; var s = statusOf(p);
+      if (s === 'zero') zero++; else if (s === 'low') low++;
+    });
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statItems').textContent = items;
+    document.getElementById('statLow').textContent = low;
+    document.getElementById('statZero').textContent = zero;
+  }
+  function getFiltered() {
+    var search = filters.search.toLowerCase().trim();
+    return products.filter(function (p) {
+      if (filters.category && p.category !== filters.category) return false;
+      if (filters.supplier && p.supplier !== filters.supplier) return false;
+      if (filters.status && statusOf(p) !== filters.status) return false;
+      if (search) {
+        var hay = (p.name + ' ' + p.sku + ' ' + p.supplier).toLowerCase();
+        if (hay.indexOf(search) === -1) return false;
+      }
+      return true;
+    });
+  }
+  function statusBadge(s) {
+    if (s === 'zero') return '<span class="badge zero">Sem estoque</span>';
+    if (s === 'low') return '<span class="badge low">Baixo</span>';
+    return '<span class="badge ok">Em estoque</span>';
+  }
+  function renderTable() {
+    var body = document.getElementById('productTableBody'); var empty = document.getElementById('emptyState');
+    var list = getFiltered();
+    if (products.length === 0) {
+      body.innerHTML = ''; empty.style.display = 'block';
+      empty.querySelector('h3').textContent = 'Nenhum item cadastrado';
+      empty.querySelector('p').textContent = 'Cadastre o primeiro item de TI do seu inventário. Ele ficará disponível em todos os aparelhos.';
+      empty.querySelector('button').style.display = ''; return;
+    }
+    if (list.length === 0) {
+      body.innerHTML = ''; empty.style.display = 'block';
+      empty.querySelector('h3').textContent = 'Nenhum resultado';
+      empty.querySelector('p').textContent = 'Nenhum item corresponde aos filtros selecionados.';
+      empty.querySelector('button').style.display = 'none'; return;
+    }
+    empty.style.display = 'none'; empty.querySelector('button').style.display = '';
+    body.innerHTML = list.map(function (p) {
+      var s = statusOf(p);
+      var cat = p.category ? '<span class="tag">' + escapeHtml(p.category) + '</span>' : '<span class="muted-cell">—</span>';
+      var sup = p.supplier ? escapeHtml(p.supplier) : '<span class="muted-cell">—</span>';
+      var skuHtml = p.sku ? '<div class="sku">' + escapeHtml(p.sku) + '</div>' : '';
+      return '<tr>' +
+        '<td><div class="product-name">' + escapeHtml(p.name) + '</div>' + skuHtml + '</td>' +
+        '<td>' + cat + '</td>' +
+        '<td>' + sup + '</td>' +
+        '<td class="qty-cell"><div class="qty-control">' +
+          '<button onclick="changeQty(\'' + p.id + '\', -1)" title="Diminuir">−</button>' +
+          '<span class="qty-value">' + p.qty + '</span>' +
+          '<button onclick="changeQty(\'' + p.id + '\', 1)" title="Aumentar">＋</button>' +
+        '</div></td>' +
+        '<td class="center">' + statusBadge(s) + '</td>' +
+        '<td class="center"><div class="actions">' +
+          '<button class="icon-btn edit" onclick="editProduct(\'' + p.id + '\')" title="Editar">✎</button>' +
+          '<button class="icon-btn delete" onclick="deleteProduct(\'' + p.id + '\')" title="Excluir">🗑</button>' +
+        '</div></td>' +
+      '</tr>';
+    }).join('');
+  }
+  function renderAll() { renderStats(); renderFilters(); renderTable(); }
+
+  /* ---------- CRUD produtos ---------- */
+  function clearErrors() { ['field-name', 'field-qty'].forEach(function (id) { document.getElementById(id).classList.remove('error'); }); }
+  window.openModal = function (editId) {
+    clearErrors();
+    var title = document.getElementById('modalTitle'); var editIdField = document.getElementById('editId');
+    if (editId) {
+      var p = products.filter(function (x) { return x.id === editId; })[0]; if (!p) return;
+      title.textContent = 'Editar Item'; editIdField.value = p.id;
+      document.getElementById('inpName').value = p.name;
+      document.getElementById('inpSku').value = p.sku;
+      document.getElementById('inpCategory').value = p.category;
+      document.getElementById('inpSupplier').value = p.supplier;
+      document.getElementById('inpQty').value = p.qty;
+      document.getElementById('inpMin').value = p.min || '';
+    } else {
+      title.textContent = 'Cadastrar Item'; editIdField.value = '';
+      ['inpName','inpSku','inpCategory','inpSupplier','inpMin'].forEach(function (id) { document.getElementById(id).value = ''; });
+      document.getElementById('inpQty').value = '';
+    }
+    document.getElementById('modalOverlay').classList.add('active');
+    setTimeout(function () { document.getElementById('inpName').focus(); }, 50);
+  };
+  window.closeModal = function () { document.getElementById('modalOverlay').classList.remove('active'); };
+  window.saveProduct = function () {
+    clearErrors();
+    var name = document.getElementById('inpName').value.trim();
+    var qtyRaw = document.getElementById('inpQty').value;
+    var sku = document.getElementById('inpSku').value.trim();
+    var category = document.getElementById('inpCategory').value.trim();
+    var supplier = document.getElementById('inpSupplier').value.trim();
+    var minRaw = document.getElementById('inpMin').value;
+    var editId = document.getElementById('editId').value;
+    var ok = true;
+    if (!name) { document.getElementById('field-name').classList.add('error'); ok = false; }
+    var qty = parseInt(qtyRaw, 10);
+    if (qtyRaw === '' || isNaN(qty) || qty < 0) { document.getElementById('field-qty').classList.add('error'); ok = false; }
+    if (!ok) return;
+    var min = minRaw === '' ? 0 : (parseInt(minRaw, 10) || 0); if (min < 0) min = 0;
+    var row = { nome: name, sku: sku, categoria: category, fornecedor: supplier, quantidade: qty, minimo: min, atualizado_em: new Date().toISOString() };
+    var btn = document.getElementById('btnSave'); btn.disabled = true; btn.textContent = 'Salvando…';
+    function done() { btn.disabled = false; btn.textContent = 'Salvar'; }
+    var op;
+    if (editId) { op = sb.from(T_PRODUTOS).update(row).eq('id', editId).select().single(); }
+    else { delete row.atualizado_em; op = sb.from(T_PRODUTOS).insert(row).select().single(); }
+    op.then(function (res) {
+      done();
+      if (res.error) { toast('Erro ao salvar: ' + res.error.message, 'error'); return; }
+      closeModal(); toast(editId ? 'Item atualizado!' : 'Item cadastrado na nuvem!', 'success'); loadProducts();
+    }).catch(function () { done(); toast('Falha de rede ao salvar.', 'error'); });
+  };
+  window.editProduct = function (id) { openModal(id); };
+  window.deleteProduct = function (id) {
+    var p = products.filter(function (x) { return x.id === id; })[0]; if (!p) return;
+    if (!confirm('Excluir "' + p.name + '"? Esta ação remove o item de todos os aparelhos.')) return;
+    sb.from(T_PRODUTOS).delete().eq('id', id)
+      .then(function (res) { if (res.error) { toast('Erro ao excluir: ' + res.error.message, 'error'); return; } toast('Item excluído.', 'success'); loadProducts(); })
+      .catch(function () { toast('Falha de rede ao excluir.', 'error'); });
+  };
+  window.changeQty = function (id, delta) {
+    var p = products.filter(function (x) { return x.id === id; })[0]; if (!p) return;
+    var newQty = Math.max(0, (p.qty || 0) + delta);
+    p.qty = newQty; renderAll();
+    sb.from(T_PRODUTOS).update({ quantidade: newQty, atualizado_em: new Date().toISOString() }).eq('id', id)
+      .then(function (res) {
+        if (res.error) { toast('Erro ao atualizar: ' + res.error.message, 'error'); loadProducts(); return; }
+        var s = statusOf(p);
+        if (s === 'zero') toast(p.name + ': sem estoque!', 'warn');
+        else if (s === 'low') toast(p.name + ': estoque baixo!', 'warn');
+      })
+      .catch(function () { toast('Falha de rede ao ajustar.', 'error'); loadProducts(); });
+  };
+
+  /* ---------- Events ---------- */
+  var eventsBound = false;
+  function bindEvents() {
+    if (eventsBound) return; eventsBound = true;
+    document.getElementById('modalOverlay').addEventListener('click', function (e) { if (e.target === this) closeModal(); });
+    document.getElementById('companyOverlay').addEventListener('click', function (e) { if (e.target === this) closeCompanyModal(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { closeModal(); closeCompanyModal(); }
+    });
+    document.getElementById('searchInput').addEventListener('input', function (e) { filters.search = e.target.value; renderTable(); });
+    document.getElementById('categoryFilter').addEventListener('change', function (e) { filters.category = e.target.value; renderTable(); });
+    document.getElementById('supplierFilter').addEventListener('change', function (e) { filters.supplier = e.target.value; renderTable(); });
+    document.getElementById('statusFilter').addEventListener('change', function (e) { filters.status = e.target.value; renderTable(); });
+  }
+
+  /* ---------- Boot ---------- */
+  function boot() {
+    var fromLink = parseHashConfig();
+    var cfg = getConfig();
+    if (cfg.url && cfg.anon && typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+      startApp(cfg.url, cfg.anon);
+      if (fromLink) setTimeout(function () { toast('Acesso configurado pelo link! 🎉', 'success'); }, 700);
+    } else {
+      document.getElementById('setupOverlay').style.display = 'block';
+      document.getElementById('appContainer').style.display = 'none';
+    }
+  }
+  function whenSdkReady(cb) {
+    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) { cb(); return; }
+    var tries = 0; var iv = setInterval(function () {
+      tries++;
+      if (typeof window.supabase !== 'undefined' && window.supabase.createClient) { clearInterval(iv); cb(); }
+      else if (tries > 40) { clearInterval(iv); cb(); }
+    }, 200);
+  }
+  whenSdkReady(boot);
+})();
+</script>
+</body>
+</html>
